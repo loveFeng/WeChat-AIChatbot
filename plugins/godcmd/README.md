@@ -1,12 +1,6 @@
 ## 插件说明
 
-原项目地址：[`godcmd`](https://github.com/zhayujie/chatgpt-on-wechat/tree/master/plugins/godcmd)，指令插件
-
-添加#debug开和关，方便调试
-
-添加授权码生成和删除
-
-本项目仅作存储用
+指令插件
 
 ## 插件使用
 

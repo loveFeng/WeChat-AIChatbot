@@ -1,6 +1,6 @@
 import logging
 import sys
-
+from logging.handlers import TimedRotatingFileHandler
 
 def _reset_logger(log):
     for handler in log.handlers:
@@ -16,7 +16,10 @@ def _reset_logger(log):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
     )
-    file_handle = logging.FileHandler("run.log", encoding="utf-8")
+    #file_handle = logging.FileHandler("run.log", encoding="utf-8")
+    log_file = "wechat"
+    file_handle = TimedRotatingFileHandler(log_file, when="midnight", encoding='utf-8')
+    file_handle.suffix = "%Y-%m-%d.log"
     file_handle.setFormatter(
         logging.Formatter(
             "[%(levelname)s][%(asctime)s][%(filename)s:%(lineno)d] - %(message)s",

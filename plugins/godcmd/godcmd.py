@@ -1,16 +1,19 @@
 # encoding:utf-8
 
-import logging
+import json
+import os
 import random
 import string
+import logging
 from typing import Tuple
 
+import bridge.bridge
 import plugins
 from bridge.bridge import Bridge
 from bridge.context import ContextType
 from bridge.reply import Reply, ReplyType
 from common import const
-from config import load_config, global_config
+from config import conf, load_config, global_config
 from plugins import *
 
 # 定义指令集
@@ -28,27 +31,6 @@ COMMANDS = {
         "alias": ["auth", "认证"],
         "args": ["口令"],
         "desc": "管理员认证",
-    },
-    "set_openai_api_key": {
-        "alias": ["set_openai_api_key"],
-        "args": ["api_key"],
-        "desc": "设置你的OpenAI私有api_key",
-    },
-    "reset_openai_api_key": {
-        "alias": ["reset_openai_api_key"],
-        "desc": "重置为默认的api_key",
-    },
-    "set_gpt_model": {
-        "alias": ["set_gpt_model"],
-        "desc": "设置你的私有模型",
-    },
-    "reset_gpt_model": {
-        "alias": ["reset_gpt_model"],
-        "desc": "重置你的私有模型",
-    },
-    "gpt_model": {
-        "alias": ["gpt_model"],
-        "desc": "查询你使用的模型",
     },
     "id": {
         "alias": ["id", "用户"],
@@ -129,9 +111,9 @@ ADMIN_COMMANDS = {
 
 # 定义帮助函数
 def get_help_text(isadmin, isgroup):
-    help_text = "通用指令：\n"
+    help_text = "通用指令\n"
     for cmd, info in COMMANDS.items():
-        if cmd == "auth":  # 不提示认证指令
+        if cmd in ["auth", "set_openai_api_key", "reset_openai_api_key", "set_gpt_model", "reset_gpt_model", "gpt_model"]:  # 不显示帮助指令
             continue
         if cmd == "id" and conf().get("channel_type", "wx") not in ["wxy", "wechatmp"]:
             continue
@@ -144,7 +126,7 @@ def get_help_text(isadmin, isgroup):
 
     # 插件指令
     plugins = PluginManager().list_plugins()
-    help_text += "\n目前可用插件有："
+    help_text += "\n可用插件"
     for plugin in plugins:
         if plugins[plugin].enabled and not plugins[plugin].hidden:
             namecn = plugins[plugin].namecn
@@ -196,6 +178,7 @@ class Godcmd(Plugin):
 
         self.password = gconf["password"]
         self.admin_users = gconf["admin_users"]  # 预存的管理员账号，这些账号不需要认证。itchat的用户名每次都会变，不可用
+        global_config["admin_users"] = self.admin_users
         self.isrunning = True  # 机器人是否运行中
 
         self.handlers[Event.ON_HANDLE_CONTEXT] = self.on_handle_context
@@ -254,6 +237,20 @@ class Godcmd(Plugin):
                                 break
                         if not ok:
                             result = "插件不存在或未启用"
+                elif cmd == "model":
+                    if not isadmin and not self.is_admin_in_group(e_context["context"]):
+                        ok, result = False, "需要管理员权限执行"
+                    elif len(args) == 0:
+                        model = conf().get("model") or const.GPT35
+                        ok, result = True, "当前模型为: " + str(model)
+                    elif len(args) == 1:
+                        if args[0] not in const.MODEL_LIST:
+                            ok, result = False, "模型名称不存在"
+                        else:
+                            conf()["model"] = self.model_mapping(args[0])
+                            Bridge().reset_bot()
+                            model = conf().get("model") or const.GPT35
+                            ok, result = True, "模型设置为: " + str(model)
                 elif cmd == "id":
                     ok, result = True, user
                 elif cmd == "set_openai_api_key":
@@ -291,8 +288,10 @@ class Godcmd(Plugin):
                     except Exception as e:
                         ok, result = False, "你没有设置私有GPT模型"
                 elif cmd == "reset":
-                    if bottype in [const.OPEN_AI, const.CHATGPT, const.CHATGPTONAZURE, const.LINKAI]:
+                    if bottype in [const.OPEN_AI, const.CHATGPT, const.CHATGPTONAZURE, const.LINKAI, const.BAIDU, const.XUNFEI, const.QWEN, const.GEMINI, const.ZHIPU_AI]:
                         bot.sessions.clear_session(session_id)
+                        if Bridge().chat_bots.get(bottype):
+                            Bridge().chat_bots.get(bottype).sessions.clear_session(session_id)
                         channel.cancel_session(session_id)
                         ok, result = True, "会话已重置"
                     else:
@@ -314,7 +313,8 @@ class Godcmd(Plugin):
                             load_config()
                             ok, result = True, "配置已重载"
                         elif cmd == "resetall":
-                            if bottype in [const.OPEN_AI, const.CHATGPT, const.CHATGPTONAZURE, const.LINKAI]:
+                            if bottype in [const.OPEN_AI, const.CHATGPT, const.CHATGPTONAZURE, const.LINKAI,
+                                           const.BAIDU, const.XUNFEI, const.QWEN, const.GEMINI, const.ZHIPU_AI, const.MOONSHOT]:
                                 channel.cancel_all_session()
                                 bot.sessions.clear_all_session()
                                 ok, result = True, "重置所有会话成功"
@@ -438,3 +438,23 @@ class Godcmd(Plugin):
 
     def get_help_text(self, isadmin=False, isgroup=False, **kwargs):
         return get_help_text(isadmin, isgroup)
+
+
+    def is_admin_in_group(self, context):
+        if context["isgroup"]:
+            return context.kwargs.get("msg").actual_user_id in global_config["admin_users"]
+        return False
+
+
+    def model_mapping(self, model) -> str:
+        if model == "gpt-4-turbo":
+            return const.GPT4_TURBO_PREVIEW
+        return model
+
+    def reload(self):
+        gconf = plugin_config[self.name]
+        if gconf:
+            if gconf.get("password"):
+                self.password = gconf["password"]
+            if gconf.get("admin_users"):
+                self.admin_users = gconf["admin_users"]

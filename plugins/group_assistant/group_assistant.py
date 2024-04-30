@@ -62,7 +62,7 @@ class GroupAssistant(Plugin):
             # 默认群聊的 ID，你可以根据实际情况进行设置
             default_group_id = self.config.get("默认群聊")
             if default_group_id:
-                reply.type = ReplyType.InviteRoom
+                reply.type = ReplyType.INVITE_ROOM
                 reply.content = default_group_id
             else:
                 reply.type = ReplyType.TEXT
@@ -85,7 +85,7 @@ class GroupAssistant(Plugin):
                 # 从self.config中获取对应的值
                 group_id = self.config.get(group_name)
                 if group_id:
-                    reply.type = ReplyType.InviteRoom
+                    reply.type = ReplyType.INVITE_ROOM
                     reply.content = group_id
                 else:
                     reply.type = ReplyType.TEXT

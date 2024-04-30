@@ -1,10 +1,4 @@
 {
   "password": "",
-  "admin_users": [],
-  "db": {
-    "host": "",
-    "user": "",
-    "password": "",
-    "database": ""
-  }
+  "admin_users": []
 }
