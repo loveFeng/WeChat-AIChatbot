@@ -18,8 +18,9 @@ class ContextType(Enum):
     FUNCTION = 22  # 函数调用
     EXIT_GROUP = 23 #退出
 
-    MONEY = 30        #转账金钱相关
-    SYSTEM = 31       #系统消息（入群通知，好友通知, 红包等）
+    MONEY = 97  # 转账金钱相关
+    SYSTEM = 98  # 系统消息（入群通知，好友通知, 红包等）
+    OTHER = 99  # 其他消息总和
 
 
     def __str__(self):

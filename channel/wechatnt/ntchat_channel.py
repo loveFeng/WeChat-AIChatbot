@@ -5,7 +5,7 @@ import uuid
 import xml.dom.minidom
 import requests
 
-from PIL import Image
+
 from bridge.context import *
 from bridge.reply import *
 from channel.chat_channel import ChatChannel
@@ -15,6 +15,11 @@ from common.log import logger
 from common.time_check import time_checker
 from config import conf
 from channel.wechatnt.nt_run import *
+
+try:
+    from PIL import Image
+except Exception as e:
+    print(f"未安装Pillow: {e}")
 
 
 def download_and_compress_image(url, filename, quality=80):
@@ -84,37 +89,7 @@ def _check(func):
     return wrapper
 
 
-# 注册消息回调
-@wechatnt.msg_register([ntchat.MT_RECV_TEXT_MSG, ntchat.MT_RECV_IMAGE_MSG,
-                        ntchat.MT_RECV_VOICE_MSG, ntchat.MT_ROOM_ADD_MEMBER_NOTIFY_MSG,
-                        ntchat.MT_RECV_SYSTEM_MSG])
-def all_msg_handler(wechat_instance: ntchat.WeChat, message):
-    logger.debug(f"收到消息: {message}")
-    if message["data"]["room_wxid"]:
-        try:
-            cmsg = NtchatMessage(wechat_instance, message, True)
-            ifgroup = True
-        except NotImplementedError as e:
-            logger.debug("[WX]single message {} skipped: {}".format(message["MsgId"], e))
-            return None
-    else:
-        try:
-            cmsg = NtchatMessage(wechat_instance, message, False)
-            ifgroup = False
-        except NotImplementedError as e:
-            logger.debug("[WX]single message {} skipped: {}".format(message["MsgId"], e))
-            return None
 
-    if ifgroup:
-        NtchatChannel().handle_group(cmsg)
-    else:
-        NtchatChannel().handle_single(cmsg)
-    logger.debug(f"cmsg: {cmsg}")
-    return None
-
-
-# 注册好友请求监听
-@wechatnt.msg_register(ntchat.MT_RECV_FRIEND_MSG)
 def on_recv_text_msg(wechat_instance: ntchat.WeChat, message):
     xml_content = message["data"]["raw_msg"]
     dom = xml.dom.minidom.parseString(xml_content)
@@ -147,6 +122,8 @@ class NtchatChannel(ChatChannel):
         logger.info("等待登录······")
         login_info = wechatnt.get_login_info()
         contacts = wechatnt.get_contacts()
+
+        ############### 这一段要优化#######################
         directory = os.path.join(os.getcwd(), "tmp")
         rooms = wechatnt.get_rooms()
         if not os.path.exists(directory):
@@ -173,10 +150,41 @@ class NtchatChannel(ChatChannel):
         # 将结果保存到json文件中
         with open(os.path.join(directory, 'wx_room_members.json'), 'w', encoding='utf-8') as f:
             json.dump(result, f, ensure_ascii=False, indent=4)
+
+        ############## 这一段要优化#######################
+            
         self.user_id = login_info['wxid']
         self.name = login_info['nickname']
         logger.info(f"登录信息:>>>user_id:{self.user_id}>>>>>>>>name:{self.name}")
+
+        wechatnt.on(ntchat.MT_ALL, self.all_msg_handler)
         forever()
+
+    def all_msg_handler(self, wechat_instance: ntchat.WeChat, message):
+        logger.debug(f"收到消息: {message}")
+        if message["data"].get("room_wxid"):
+            try:
+                cmsg = NtchatMessage(wechat_instance, message, self.user_id, self.name, True)
+                ifgroup = True
+            except NotImplementedError as e:
+                logger.debug("[WX]single message {} skipped: {}".format(message["MsgId"], e))
+                return None
+        else:
+            try:
+                cmsg = NtchatMessage(wechat_instance, message, self.user_id, self.name, False)
+                ifgroup = False
+            except NotImplementedError as e:
+                logger.debug("[WX]single message {} skipped: {}".format(message["MsgId"], e))
+                return None
+
+        logger.debug(f"cmsg: {cmsg}")
+
+        if ifgroup:
+            self.handle_group(cmsg)
+        else:
+            self.handle_single(cmsg)
+
+        return None
 
     @time_checker
     @_check

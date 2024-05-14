@@ -9,6 +9,7 @@ from channel.chat_message import ChatMessage
 from channel.wechatnt.nt_run import wechatnt
 from channel.wechatnt.WechatImageDecoder import WechatImageDecoder
 from common.log import logger
+import ntchat
 
 
 def ensure_file_ready(file_path, timeout=10, interval=0.5):
@@ -45,19 +46,21 @@ def get_display_name_or_nickname(room_members, group_wxid, wxid):
 
 
 class NtchatMessage(ChatMessage):
-    def __init__(self, wechat, wechat_msg, is_group=False):
+    def __init__(self, wechat, wechat_msg, self_id, self_name, is_group=False):
         try:
             super().__init__(wechat_msg)
-            self.msg_id = wechat_msg['data'].get('from_wxid', wechat_msg['data'].get("room_wxid"))
-            self.create_time = wechat_msg['data'].get("timestamp")
+            if 'msgid' in wechat_msg['data']:
+                self.msg_id = wechat_msg['data']['msgid']
+            else:
+                self.msg_id = str(int(time.time()))
+
+            self.create_time = wechat_msg['data'].get("timestamp", int(time.time()))
+
             self.is_group = is_group
             self.wechat = wechat
 
             # 获取一些可能多次使用的值
             current_dir = os.getcwd()
-            login_info = self.wechat.get_login_info()
-            nickname = login_info['nickname']
-            user_id = login_info['wxid']
 
             # 从文件读取数据，并构建以 wxid 为键的字典
             with open(os.path.join(current_dir, "tmp", 'wx_contacts.json'), 'r', encoding='utf-8') as f:
@@ -65,19 +68,24 @@ class NtchatMessage(ChatMessage):
             with open(os.path.join(current_dir, "tmp", 'wx_rooms.json'), 'r', encoding='utf-8') as f:
                 rooms = {room['wxid']: room['nickname'] for room in json.load(f)}
 
-
             data = wechat_msg['data']
             self.from_user_id = data.get('from_wxid', data.get("room_wxid"))
             self.from_user_nickname = contacts.get(self.from_user_id)
-            self.to_user_id = user_id
-            self.to_user_nickname = nickname
-            self.other_user_nickname = self.from_user_nickname
-            self.other_user_id = self.from_user_id
+            if self_id == self.from_user_id:
+                self.to_user_id = data.get("to_wxid")
+                self.to_user_nickname = contacts.get(self.to_user_id)
+                self.other_user_nickname = self.to_user_nickname
+                self.other_user_id = self.to_user_id
+            else:
+                self.to_user_id = self_id
+                self.to_user_nickname = self_name
+                self.other_user_nickname = self.from_user_nickname
+                self.other_user_id = self.from_user_id
 
-            if wechat_msg["type"] == 11046:  # 文本消息类型
+            if wechat_msg["type"] == ntchat.MT_RECV_TEXT_MSG:  # 文本消息类型 11046
                 self.ctype = ContextType.TEXT
                 self.content = data['msg']
-            elif wechat_msg["type"] == 11047:  # 需要缓存文件的消息类型
+            elif wechat_msg["type"] == ntchat.MT_RECV_IMAGE_MSG:  # 图片消息通知 11047
                 image_path = data.get('image').replace('\\', '/')
                 if ensure_file_ready(image_path):
                     decoder = WechatImageDecoder(image_path)
@@ -86,11 +94,11 @@ class NtchatMessage(ChatMessage):
                     self._prepare_fn = lambda: None
                 else:
                     logger.error(f"Image file {image_path} is not ready.")
-            elif wechat_msg["type"] == 11048:  # 需要缓存文件的消息类型
+            elif wechat_msg["type"] == ntchat.MT_RECV_VOICE_MSG:  # 语音消息通知 11048
                 self.ctype = ContextType.VOICE
                 self.content = data.get('mp3_file')
                 self._prepare_fn = lambda: None
-            elif wechat_msg["type"] == 11098:
+            elif wechat_msg["type"] == ntchat.MT_ROOM_ADD_MEMBER_NOTIFY_MSG:  # 群成员新增通知 11098
                 self.ctype = ContextType.JOIN_GROUP
                 self.actual_user_nickname = data['member_list'][0]['nickname']
                 self.content = f"{self.actual_user_nickname}加入了群聊！"
@@ -101,19 +109,18 @@ class NtchatMessage(ChatMessage):
                     result[room_wxid] = room_members
                 with open(os.path.join(directory, 'wx_room_members.json'), 'w', encoding='utf-8') as f:
                     json.dump(result, f, ensure_ascii=False, indent=4)
-            elif wechat_msg["type"] == 11058 and "拍了拍我" in data.get('raw_msg'):
+            elif wechat_msg["type"] == ntchat.MT_RECV_SYSTEM_MSG and "拍了拍" in data.get('raw_msg'):  # 系统消息通知 11058
                 self.ctype = ContextType.PATPAT
                 self.content = data.get('raw_msg')
-                if self.is_group:
-                    directory = os.path.join(os.getcwd(), "tmp")
-                    file_path = os.path.join(directory, "wx_room_members.json")
-                    with open(file_path, 'r', encoding='utf-8') as file:
-                        room_members = json.load(file)
-                    self.actual_user_nickname = get_display_name_or_nickname(room_members, data.get('room_wxid'),
-                                                                             self.from_user_id)
+            elif wechat_msg["type"] == ntchat.MT_RECV_FILE_MSG:  # 文件消息通知 11055
+                self.ctype = ContextType.FILE
+                self.content = data.get('file')
+            elif wechat_msg["type"] == ntchat.MT_RECV_VIDEO_MSG:  # 视频消息通知 11051
+                self.ctype = ContextType.VIDEO
+                self.content = data.get('video')
             else:
-                raise NotImplementedError(
-                    "Unsupported message type: Type:{} MsgType:{}".format(wechat_msg["type"], wechat_msg["type"]))
+                self.ctype = ContextType.OTHER
+                self.content = data
 
             if self.is_group:
                 directory = os.path.join(os.getcwd(), "tmp")
@@ -124,9 +131,9 @@ class NtchatMessage(ChatMessage):
                 self.other_user_id = data.get('room_wxid')
                 if self.from_user_id:
                     at_list = data.get('at_user_list', [])
-                    self.is_at = user_id in at_list
+                    self.is_at = self_id in at_list
                     content = data.get('msg', '')
-                    pattern = f"@{re.escape(nickname)}(\u2005|\u0020)"
+                    pattern = f"@{re.escape(self_name)}(\u2005|\u0020)"
                     self.is_at |= bool(re.search(pattern, content))
                     self.actual_user_id = self.from_user_id
                     if not self.actual_user_nickname:

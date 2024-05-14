@@ -31,7 +31,7 @@ def run():
         sigterm_handler_wrap(signal.SIGTERM)
 
         # create channel
-        channel_name = conf().get("channel_type", "ntchat")
+        channel_name = "ntchat"  # conf().get("channel_type", "ntchat")
 
         if "--cmd" in sys.argv:
             channel_name = "terminal"

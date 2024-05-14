@@ -91,6 +91,7 @@ class ChatChannel(Channel):
             e_context = PluginManager().emit_event(
                 EventContext(Event.ON_RECEIVE_MESSAGE, {"channel": self, "context": context}))
             context = e_context["context"]
+            content = context["content"]  # 接收信息可以修改内容
             if e_context.is_pass() or context is None:
                 return context
 
