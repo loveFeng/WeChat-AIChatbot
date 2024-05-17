@@ -27,7 +27,7 @@
     "Blackroom": {
       "url": "https://github.com/dividduang/blackroom.git",
       "desc": "小黑屋插件，被拉进小黑屋的人将不能使用@bot的功能的插件"
-    }
+    },
     "midjourney_turbo": {
       "url": "https://github.com/chazzjimel/midjourney_turbo.git",
       "desc": "midjourney画图的插件"

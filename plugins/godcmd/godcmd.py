@@ -15,6 +15,10 @@ from bridge.reply import Reply, ReplyType
 from common import const
 from config import conf, load_config, global_config
 from plugins import *
+try:
+    from channel.wechatnt.ntchat_channel import wechatnt
+except Exception as e:
+    print(f"未安装ntchat: {e}")
 
 # 定义指令集
 COMMANDS = {
@@ -101,6 +105,16 @@ ADMIN_COMMANDS = {
         "alias": ["updatep", "更新插件"],
         "args": ["插件名"],
         "desc": "更新指定插件",
+    },
+    "user": {
+        "alias": ["user", "查人"],
+        "args": ["名字/备注"],
+        "desc": "查找人的wxid",
+    },
+    "group": {
+        "alias": ["group", "查群"],
+        "args": ["群名字"],
+        "desc": "查找群的wxid",
     },
     "debug": {
         "alias": ["debug", "调试模式", "DEBUG"],
@@ -393,6 +407,37 @@ class Godcmd(Plugin):
                                 ok, result = False, "请提供插件名"
                             else:
                                 ok, result = PluginManager().update_plugin(args[0])
+                        elif cmd == "user":
+                            if len(args) != 1:
+                                ok, result = False, "提供人名"
+                            else:
+                                name = args[0]
+                                userinfo = wechatnt.search_contacts(nickname=name, remark=name)
+                                if len(userinfo) > 0:
+                                    ok, result = True, json.dumps(userinfo, indent=4).encode().decode('unicode_escape')
+                                else:
+                                    ok, result = False, f"未找到 {name}"
+                        elif cmd == "group":
+                            if len(args) != 1:
+                                ok, result = False, "提供群名"
+                            else:
+                                name = args[0]
+                                rooms = wechatnt.get_rooms()
+                                findRooms = []
+                                if len(rooms) > 0:
+                                    # 遍历
+                                    for item in rooms:
+                                        nickname = item.get("nickname")
+                                        if name in nickname:
+                                            findRooms.append(item)
+
+                                if len(findRooms) > 0:
+                                    findRooms = [{k: v for k, v in d.items() if k != 'member_list'} for d in findRooms]
+                                    ok, result = True, json.dumps(findRooms, indent=4).encode().decode(
+                                        'unicode_escape')
+                                else:
+                                    ok, result = False, f"未找到群 {name}"
+
                         logger.debug("[Godcmd] admin command: %s by %s" % (cmd, user))
                 else:
                     ok, result = False, "需要管理员权限才能执行该指令"

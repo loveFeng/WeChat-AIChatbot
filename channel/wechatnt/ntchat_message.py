@@ -118,6 +118,19 @@ class NtchatMessage(ChatMessage):
             elif wechat_msg["type"] == ntchat.MT_RECV_VIDEO_MSG:  # 视频消息通知 11051
                 self.ctype = ContextType.VIDEO
                 self.content = data.get('video')
+            elif wechat_msg["type"] == ntchat.MT_RECV_LINK_MSG:  # 链接卡片消息通知 MT_RECV_LINK_MSG
+                self.ctype = ContextType.SHARING
+                self.content = data.get('raw_msg')
+                # 定义正则表达式
+                url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\$\$,]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+                
+                # 使用re.search()查找url
+                url_match = url_pattern.search(self.content)
+                
+                # 如果找到url，返回url，否则返回None
+                if url_match:
+                    self.content = url_match.group()
+
             else:
                 self.ctype = ContextType.OTHER
                 self.content = data

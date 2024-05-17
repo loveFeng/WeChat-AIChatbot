@@ -15,6 +15,7 @@ from plugins import *
     name="tool",
     desc="Arming your ChatGPT bot with various tools",
     version="0.5",
+    hidden=True,
     author="goldfishh",
     desire_priority=0,
 )

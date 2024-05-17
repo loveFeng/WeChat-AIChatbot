@@ -33,6 +33,9 @@ def download_and_compress_image(url, filename, quality=80):
     response = requests.get(url)
     image = Image.open(io.BytesIO(response.content))
 
+    # 如果图片是 'RGBA' 模式，转换为 'RGB' 模式
+    if image.mode == 'RGBA':
+        image = image.convert('RGB')
     # 压缩图片
     image_path = os.path.join(directory, f"{filename}.jpg")
     image.save(image_path, "JPEG", quality=quality)
@@ -237,8 +240,11 @@ class NtchatChannel(ChatChannel):
                 with open(file_path, 'r', encoding='utf-8') as file:
                     room_members = json.load(file)
                 wxid = get_wxid_by_name(room_members, receiver, name)
-                wxid_list = [wxid]
-                wechatnt.send_room_at_msg(receiver, reply.content, wxid_list)
+                if wxid:
+                    wxid_list = [wxid]
+                    wechatnt.send_room_at_msg(receiver, reply.content, wxid_list)
+                else:
+                    wechatnt.send_text(receiver, reply.content)
             else:
                 wechatnt.send_text(receiver, reply.content)
             logger.info("[WX] sendMsg={}, receiver={}".format(reply, receiver))
