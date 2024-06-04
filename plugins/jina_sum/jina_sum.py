@@ -78,7 +78,11 @@ class JinaSum(Plugin):
 
             target_url = html.unescape(content) # 解决公众号卡片链接校验问题，参考 https://github.com/fatwang2/sum4all/commit/b983c49473fc55f13ba2c44e4d8b226db3517c45
             jina_url = self._get_jina_url(target_url)
-            response = requests.get(jina_url, timeout=60)
+            #response = requests.get(jina_url, timeout=60)
+            headers = {
+                'x-target-selector': '.content-article'
+            }
+            response = requests.get(jina_url, headers=headers, timeout=60)
             response.raise_for_status()
             target_url_content = response.text
 
