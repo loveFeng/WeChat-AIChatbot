@@ -118,6 +118,10 @@ class ChatChannel(Channel):
                     logger.info("[WX]receive group at")
                     if not conf().get("group_at_off", False):
                         flag = True
+                    if "@所有人" in content:
+                        logger.info("[WX]不响应@所有人")
+                        return None
+
                     pattern = f"@{re.escape(self.name)}(\u2005|\u0020)"
                     subtract_res = re.sub(pattern, r"", content)
                     if subtract_res == content and context["msg"].self_display_name:

@@ -100,7 +100,7 @@ class ChatGPTBot(Bot, OpenAIImage):
             receiver = context.kwargs.get("receiver")
             api_key = api_key_list.get(receiver, conf().get("open_ai_api_key")) \
                 if conf().get("fast_gpt") and isgroup else conf().get("open_ai_api_key")
-            api_base = conf().get("open_ai_api_base")
+            api_base = conf().get("fastgpt_api_base") if conf().get("fast_gpt") else conf().get("open_ai_api_base")
 
             model = context.get("gpt_model")
             new_args = None

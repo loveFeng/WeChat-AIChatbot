@@ -44,6 +44,7 @@ class JinaSum(Plugin):
             self.open_ai_api_base = self.config.get("open_ai_api_base", self.open_ai_api_base)
             self.open_ai_api_key = self.config.get("open_ai_api_key", "")
             self.open_ai_model = self.config.get("open_ai_model", self.open_ai_model)
+            self.group = self.config.get("group", False)
             self.max_words = self.config.get("max_words", self.max_words)
             self.prompt = self.config.get("prompt", self.prompt)
             self.white_url_list = self.config.get("white_url_list", self.white_url_list)
@@ -57,12 +58,15 @@ class JinaSum(Plugin):
     def on_handle_context(self, e_context: EventContext, retry_count: int = 0):
         try:
             context = e_context["context"]
+            isgroup = e_context["context"].get("isgroup", False)
+            if isgroup and not self.group:
+                return
 
             if context.type != ContextType.SHARING and context.type != ContextType.TEXT:
                 return
 
-            content = context.content
-            
+            content = context.content.lstrip() # 去除开头的空格和换行符
+
             if not self._check_url(content):
                 logger.debug(f"[JinaSum] {content} is not a valid url, skip")
                 return

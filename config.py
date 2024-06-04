@@ -130,9 +130,10 @@ available_setting = {
     "linkai_app_code": "",
     "accept_friend": False,  # 配置是否自动通过好友请求，随机延迟1-10秒
     "fast_gpt": False,  # 标识模型接口是否是fastgpt
+    "fastgpt_api_base": "",
+    "fastgpt_list": {},  # 配置群聊单一fasgpt知识库
     "ntchat_smart": True,  # 配置ntchat是否使用已登录微信，False为多开
     "wework_smart": True,  # 配置wework是否使用已登录微信，False为多开
-    "fastgpt_list": {},  # 配置群聊单一fasgpt知识库
     "wework_http": "http://127.0.0.1",  # weworktop通道http接口地址
     "wework_callback_port": 8001  # weworktop回调端口
 }
