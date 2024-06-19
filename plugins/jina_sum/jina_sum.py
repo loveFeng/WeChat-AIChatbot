@@ -89,7 +89,7 @@ class JinaSum(Plugin):
             openai_chat_url = self._get_openai_chat_url()
             openai_headers = self._get_openai_headers()
             openai_payload = self._get_openai_payload(target_url_content)
-            logger.debug(f"[JinaSum] openai_chat_url: {openai_chat_url}, openai_headers: {openai_headers}, openai_payload: {openai_payload}")
+            # logger.debug(f"[JinaSum] openai_chat_url: {openai_chat_url}, openai_headers: {openai_headers}, openai_payload: {openai_payload}")
             response = requests.post(openai_chat_url, headers=openai_headers, json=openai_payload, timeout=60)
             response.raise_for_status()
             result = response.json()['choices'][0]['message']['content']

@@ -124,6 +124,8 @@ class PluginManager:
                 pconf["plugins"][rawname] = {
                     "enabled": plugincls.enabled,
                     "priority": plugincls.priority,
+                    "control": "black",
+                    "namelist": []
                 }
             else:
                 self.plugins[name].enabled = pconf["plugins"][rawname]["enabled"]
@@ -184,12 +186,28 @@ class PluginManager:
         if e_context.event in self.listening_plugins:
             for name in self.listening_plugins[e_context.event]:
                 if self.plugins[name].enabled and e_context.action == EventAction.CONTINUE:
-                    logger.debug("Plugin %s triggered by event %s" % (name, e_context.event))
-                    instance = self.instances[name]
-                    instance.handlers[e_context.event](e_context, *args, **kwargs)
-                    if e_context.is_break():
-                        e_context["breaked_by"] = name
-                        logger.debug("Plugin %s breaked event %s" % (name, e_context.event))
+                    pluginsName = self.plugins[name].name
+
+                    if "control" in self.pconf["plugins"][pluginsName]:
+                        control = self.pconf["plugins"][pluginsName]["control"]
+                    else:
+                        control = "black"
+
+                    if "namelist" in self.pconf["plugins"][pluginsName]:
+                        namelist = self.pconf["plugins"][pluginsName]["namelist"]
+                    else:
+                        namelist = []
+
+                    user = e_context["context"]["receiver"]
+                    isgroup = e_context["context"].get("isgroup", False)
+                    # logger.debug("emit_event name={}，pluginsName={}, control={}， namelist={},user={}".format(name, pluginsName, control,namelist, user))
+                    if (control == "black" and (user not in namelist or (isgroup and "ALL_GROUP" not in namelist) or (not isgroup and "ALL_SINGLE" not in namelist))) or (control != "black" and (user in namelist or (isgroup and "ALL_GROUP" in namelist) or (not isgroup and "ALL_SINGLE" in namelist))):
+                        logger.debug("Plugin %s triggered by event %s" % (name, e_context.event))
+                        instance = self.instances[name]
+                        instance.handlers[e_context.event](e_context, *args, **kwargs)
+                        if e_context.is_break():
+                            e_context["breaked_by"] = name
+                            logger.debug("Plugin %s breaked event %s" % (name, e_context.event))
         return e_context
 
     def set_plugin_priority(self, name: str, priority: int):

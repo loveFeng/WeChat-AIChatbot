@@ -109,7 +109,7 @@ class NtchatMessage(ChatMessage):
                     result[room_wxid] = room_members
                 with open(os.path.join(directory, 'wx_room_members.json'), 'w', encoding='utf-8') as f:
                     json.dump(result, f, ensure_ascii=False, indent=4)
-            elif wechat_msg["type"] == ntchat.MT_RECV_SYSTEM_MSG and "拍了拍" in data.get('raw_msg'):  # 系统消息通知 11058
+            elif wechat_msg["type"] == ntchat.MT_RECV_SYSTEM_MSG and "拍了拍我" in data.get('raw_msg'):  # 系统消息通知 11058
                 self.ctype = ContextType.PATPAT
                 self.content = data.get('raw_msg')
             elif wechat_msg["type"] == ntchat.MT_RECV_FILE_MSG:  # 文件消息通知 11055
@@ -118,7 +118,7 @@ class NtchatMessage(ChatMessage):
             elif wechat_msg["type"] == ntchat.MT_RECV_VIDEO_MSG:  # 视频消息通知 11051
                 self.ctype = ContextType.VIDEO
                 self.content = data.get('video')
-            elif wechat_msg["type"] in [ ntchat.MT_RECV_LINK_MSG, ntchat.MT_RECV_OTHER_APP_MSG ]:  # 链接卡片消息通知 MT_RECV_LINK_MSG
+            elif wechat_msg["type"] in [ntchat.MT_RECV_LINK_MSG, ntchat.MT_RECV_OTHER_APP_MSG]:  # 链接卡片消息通知 MT_RECV_LINK_MSG
                 self.ctype = ContextType.SHARING
                 self.content = data.get('raw_msg')
                 # 定义正则表达式
@@ -133,7 +133,7 @@ class NtchatMessage(ChatMessage):
 
             else:
                 self.ctype = ContextType.OTHER
-                self.content = data
+                self.content = ""
 
             if self.is_group:
                 directory = os.path.join(os.getcwd(), "tmp")
