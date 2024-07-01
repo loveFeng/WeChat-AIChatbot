@@ -80,10 +80,25 @@ class JinaSum(Plugin):
             jina_url = self._get_jina_url(target_url)
             #response = requests.get(jina_url, timeout=60)
             headers = {
-                'x-target-selector': '.content-article'
+                'x-target-selector': '.content-article',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US, en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Referer': 'https://jina.ai'
             }
-            response = requests.get(jina_url, headers=headers, timeout=60)
+            response = requests.get(jina_url, headers=headers, timeout=180)
             response.raise_for_status()
+
+            # try:
+            #     response = requests.get(jina_url, headers=headers, timeout=180)
+            #     response.raise_for_status()
+            # except requests.exceptions.HTTPError as http_err:
+            #     print(f'HTTP 错误发生: {http_err}')
+            #     response = requests.get(jina_url, timeout=180)
+            #     response.raise_for_status()
+            # except requests.exceptions.RequestException as req_err:
+            #     print(f'请求错误发生: {req_err}')
+
             target_url_content = response.text
 
             openai_chat_url = self._get_openai_chat_url()
@@ -106,7 +121,7 @@ class JinaSum(Plugin):
             logger.exception(f"[JinaSum] {str(e)}")
             reply = Reply(ReplyType.ERROR, "我暂时无法总结链接，请稍后再试")
             e_context["reply"] = reply
-            e_context.action = EventAction.BREAK_PASS
+            e_context.action = EventAction.CONTINUE
 
     def get_help_text(self, verbose, **kwargs):
         return f'使用jina reader和ChatGPT总结网页链接内容'

@@ -1,16 +1,10 @@
 # 简介
 
-> **本项目只能在win系统运行**，<u>基于[chatgpt-on-wechat](https://github.com/zhayujie/chatgpt-on-wechat)二改，完全使用了源项目的框架，鸣谢！</u>支持Win平台的PC客户端以及企微客户端，本项目会持续更新，也会逐渐开发插件，一个人开发，勿催，感谢！
+> **本项目只能在win系统或wine中运行**，<u>基于[WeChat-AIChatbot-WinOnly](https://github.com/cheungchazz/WeChat-AIChatbot-WinOnly)二改，完全使用了[chatgpt-on-wechat](https://github.com/cheungchazz/WeChat-AIChatbot-WinOnly)项目的框架，鸣谢！</u>只支持Win平台的PC客户端，本项目会持续更新，也会逐渐开发插件，一个人开发，勿催，感谢！
 
 项目支持的消息通道及功能如下：
 
-- [x] **Wework**：PC端的企微个人号消息通道，依赖 [ntwork](https://github.com/chazzjimel/ntwork)，限制[WeCom_4.0.8.6027版本](https://dldir1.qq.com/wework/work_weixin/WeCom_4.0.8.6027.exe)，**只能在Win平台运行项目**。
-
-  - [x] 发送消息：文本/图片/视频/文件/群聊@/链接卡片/GIF
-  - [x] 接收消息：All
-  - [ ] 短板缺陷：无法发送语音条信息
-
-- [x] **Wechat** ：PC端的个微消息通道，依赖 [ntchat项目](https://github.com/billyplus/ntchat) ，最高支持Python310环境版本，限[WeChat3.6.0.18版本](https://github.com/tom-snow/wechat-windows-versions/releases/download/v3.6.0.18/WeChatSetup-3.6.0.18.exe)，**只能在Win平台运行项目**。
+- [x] **Wechat** ：PC端的个微消息通道，依赖 [ntchat项目](https://github.com/billyplus/ntchat) ，限[WeChat3.6.0.18版本](https://github.com/tom-snow/wechat-windows-versions/releases/download/v3.6.0.18/WeChatSetup-3.6.0.18.exe)。
   - [x] 发送消息：文本/图片/视频/文件/群聊@/链接卡片/GIF
   - [x] 接收消息：All
   - [x] 其他功能：同意加好友请求/创建群/添加好友入群/邀请好友入群/删除群成员/修改群名/修改群公告
@@ -19,10 +13,17 @@
 # **详细功能列表：**
 
 - [x] 聊天对话：私聊、群聊对话，支持fastgpt、openai、azure、文心一言对话模型通道
-- [x] 语音对话：语音消息可选文字或语音回复，支持 azure, openai等语音模型，语音回复仅文件格式，weworktop可实现语音条回复
-- [x] 绘画插件：默认openai绘画支持，项目集成MJ绘画插件，待海艺开放API会优先接入做适配
-- [x] 联网插件：内置联网插件，通过GPT的函数调用功能实现，目前能用，持续优化中
+- [ ] 语音对话：语音消息文字回复，支持 azure, openai等语音模型
 - [x] 高度定制：依赖fastgpt接口，可实现每个群聊对应不同的应用知识库
+- [x] 插件
+    - [x] 管理(Godcmd): 添加获取好友+群的真实名称，在定时器插件中使用
+    - [x] 超时监控(timeout)：苹果手机双开微信没有消息通知，此插件监控PC端消息，2分钟后通知管理员
+    - [x] 定时器(timetask)：定时任务，支持一条消息发给多个用户
+    - [x] Apilot：“早报”、“摸鱼”、"热搜"
+    - [x] JinaSum：总结网页链接内容
+    - [x] sum4all：总结网页，文件，图片，搜索
+    - [ ] summary：总结聊天消息
+    - [ ] group_assistant：进群插件
 
 
 # 更新日志
@@ -50,7 +51,7 @@
 ### 1.运行环境
 
 仅支持Windows 系统同时需安装 `Python`。
-> 建议Python版本在 3.7.1~3.10 之间。
+> 建议Python版本在 3.7.1~3.11 之间。
 
 **(1) 下载项目代码：**
 
@@ -196,41 +197,6 @@ pip install ntchat
 ```
 
 4.运行 app.py
-
-### 3. PC本地部署wework（仅限window平台）
-
-1.主项目安装主要依赖后，还需要安装ntchat依赖
-
-```
-pip install ntwork
-```
-
-2.安装指定PC企微专用版本：[WeCom_4.0.8.6027版本](https://github.com/tom-snow/wechat-windows-versions/releases/download/v3.6.0.18/WeChatSetup-3.6.0.18.exe)，扫码登陆好，关闭自动更新企业微信
-
-3.修改主项目配置项：config.json文件内
-
-```json
-"channel_type": "wework"
-```
-
-4.运行 app.py
-
-### 4. PC本地部署高级企微接口（仅限window平台）
-
-1.安装指定PC企微专用版本：[WeCom_4.0.8.6027版本](https://github.com/tom-snow/wechat-windows-versions/releases/download/v3.6.0.18/WeChatSetup-3.6.0.18.exe)，扫码登陆好，关闭自动更新企业微信
-
-2.修改主项目配置项：config.json文件内
-
-```json
-"channel_type": "weworktop"
-```
-
-3.管理员运行企微接口程序，基础版在项目文件夹”WeChat-AIChatbot-WinOnly\channel\weworktop\“内，运行WeworkApi.exe，不用输入key直接点击启动服务，启动成功企微打开后下一步
-
-4.运行 app.py
-
-
-
 
 
 ## 硬核功能展示
