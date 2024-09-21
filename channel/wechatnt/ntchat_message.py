@@ -130,7 +130,10 @@ class NtchatMessage(ChatMessage):
                 # 如果找到url，返回url，否则返回None
                 if url_match:
                     self.content = url_match.group()
-
+            elif wechat_msg["type"] == ntchat.MT_RECV_FRIEND_MSG:  # 新好友通知 11049
+                self.ctype = ContextType.NEW_FRIEND
+                fromnickname = data.get('raw_msg').split('fromnickname="')[1].split('"')[0]
+                self.content = "来新朋友了：" + fromnickname
             else:
                 self.ctype = ContextType.OTHER
                 self.content = ""

@@ -60,7 +60,7 @@ class Timeout(Plugin):
             channel.send(reply, context)
 
     def on_handle_check(self, e_context: EventContext):
-        if self.msg_check and not e_context['context'].get("isgroup", False) and e_context['context'].type.value < ContextType.SHARING.value:
+        if self.msg_check and not e_context['context'].get("isgroup", False) and e_context['context'].type.value <= ContextType.NEW_FRIEND.value:
             user = e_context["context"]["receiver"]
             cmsg = e_context["context"]["msg"]
             if self.user_id is None:

@@ -10,6 +10,8 @@ class ContextType(Enum):
     FILE = 4  # 文件信息
     VIDEO = 5  # 视频信息
     SHARING = 6  # 分享信息
+    NEW_FRIEND = 7  # 好友通知
+
 
     IMAGE_CREATE = 10  # 创建图片命令
     ACCEPT_FRIEND = 19 # 同意好友请求
@@ -17,6 +19,8 @@ class ContextType(Enum):
     PATPAT = 21  # 拍了拍
     FUNCTION = 22  # 函数调用
     EXIT_GROUP = 23 #退出
+
+
 
     MONEY = 97  # 转账金钱相关
     SYSTEM = 98  # 系统消息（入群通知，好友通知, 红包等）
