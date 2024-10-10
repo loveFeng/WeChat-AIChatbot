@@ -86,8 +86,20 @@ class JinaSum(Plugin):
                 'Accept-Encoding': 'gzip, deflate, br',
                 'Referer': 'https://jina.ai'
             }
-            response = requests.get(jina_url, headers=headers, timeout=180)
-            response.raise_for_status()
+            # response = requests.get(jina_url, headers=headers, timeout=180)
+            timeout = 180
+            max_retries = 3
+
+            for i in range(max_retries):
+                try:
+                    response = requests.get(jina_url, timeout=timeout)
+                    response.raise_for_status()  # 检查响应是否成功
+                    break  # 如果成功，跳出循环
+                except HTTPError as e:
+                    if i == max_retries - 1:
+                        raise  # 如果达到最大重试次数，重新抛出异常
+                    else:
+                        print(f"Attempt {i + 1} failed: {e}")
 
             # try:
             #     response = requests.get(jina_url, headers=headers, timeout=180)
